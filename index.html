@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#09090c">
+<title>FM2 Trade Lab</title>
+<style>
+:root{--bg:#08090c;--panel:#111218;--panel2:#171922;--line:#292c38;--text:#f6f7fb;--muted:#989daa;--red:#ef2854;--good:#42d989;--warn:#f7b955;--bad:#ff6377}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 12% 15%,#2c0b18 0,transparent 32%),var(--bg);color:var(--text);font:14px Inter,system-ui,-apple-system,Segoe UI,sans-serif}
+button,select,input{font:inherit}button{cursor:pointer}.top{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:14px;padding:14px 18px;background:#090a0ed9;backdrop-filter:blur(18px);border-bottom:1px solid var(--line)}
+.logo{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;font-weight:1000;background:linear-gradient(145deg,#ff456b,#a5002c)}
+.brand b{letter-spacing:.16em}.brand small{display:block;color:var(--muted);margin-top:2px}.status{margin-left:auto;display:flex;gap:8px;align-items:center;color:#c9ccd4;font-size:12px}.dot{width:9px;height:9px;border-radius:50%;background:var(--warn)}.dot.live{background:var(--good)}.dot.error{background:var(--bad)}
+.sync{border:1px solid var(--line);background:#171922;color:#fff;padding:9px 12px;border-radius:9px;font-weight:800}.wrap{max-width:1500px;margin:auto;padding:20px}
+.board{display:grid;grid-template-columns:260px 1fr 260px;border:1px solid var(--line);border-radius:20px;overflow:hidden;background:#0e0f14;box-shadow:0 25px 70px #0008}
+.rail{padding:16px;background:linear-gradient(180deg,#161820,#0e0f14)}.rail:first-child{border-right:1px solid var(--line)}.rail:last-child{border-left:1px solid var(--line)}
+.teamselect{width:100%;background:#20232d;color:#fff;border:1px solid #343846;border-radius:10px;padding:11px;font-weight:900}.teamcard{margin-top:14px;border-radius:15px;padding:16px;min-height:130px;background:linear-gradient(135deg,var(--c1),var(--c2));position:relative;overflow:hidden}
+.teamcard img{width:64px;height:64px;object-fit:contain;float:right}.city{font-size:11px;letter-spacing:.12em;opacity:.8}.name{font-size:25px;font-weight:1000;line-height:1}.metric{margin-top:16px;padding:12px;background:#171922;border:1px solid var(--line);border-radius:12px}.label{font-size:10px;letter-spacing:.14em;color:var(--muted);font-weight:900}.big{font-size:30px;font-weight:1000;margin-top:4px}.needs{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.chip{padding:6px 8px;border-radius:7px;background:#21242d;border:1px solid #303442;font-weight:900;font-size:11px}
+.main{padding:20px;min-width:0}.head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px}.head h1{margin:3px 0 0;font-size:30px}.badge{font-size:10px;font-weight:1000;letter-spacing:.12em;border:1px solid var(--line);padding:8px 10px;border-radius:999px;color:#ffd087}
+.offer{display:grid;grid-template-columns:1fr 38px 1fr;gap:9px}.mid{display:grid;place-items:center;color:#aaa}.stack{display:grid;gap:8px}.slot{min-height:76px;border:1px dashed #3b3e49;border-radius:12px;background:#14161d;padding:8px;display:flex;align-items:center;gap:10px}.slot.empty{justify-content:center;color:#aaa;font-weight:800}.slot button{margin-left:auto;border:0;background:#2a2d37;color:#fff;width:26px;height:26px;border-radius:50%}
+.playerpick{width:100%;background:#1f222b;color:#fff;border:1px solid #343845;border-radius:9px;padding:10px}.pname{font-weight:950}.pmeta{font-size:11px;color:var(--muted);margin-top:3px}.ovr{margin-left:auto;font-size:18px;font-weight:1000;background:#15b762;color:#06180d;padding:6px 8px;border-radius:8px}
+.actions{display:flex;justify-content:center;gap:8px;margin-top:16px}.primary,.secondary{border:0;border-radius:9px;padding:11px 15px;color:#fff;font-weight:900}.primary{background:linear-gradient(135deg,#f2305a,#b91039)}.secondary{background:#1a1c24;border:1px solid var(--line)}
+.analysis{margin-top:18px;border:1px solid var(--line);border-radius:18px;background:#101117;padding:17px}.grid{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:10px}.card{background:#171922;border:1px solid var(--line);border-radius:13px;padding:14px;min-height:150px}.values{display:flex;justify-content:space-between;align-items:center;font-size:28px;font-weight:1000}.arrow{font-size:18px;color:#777}.bar{height:9px;background:linear-gradient(90deg,#ff6575,#f6b75a,#44d48a,#f6b75a,#ff6575);border-radius:99px;margin:14px 0;position:relative}.marker{position:absolute;top:-4px;width:3px;height:17px;background:white;border-radius:2px;left:50%}.row{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid #242732}.row:last-child{border:0}.muted{color:var(--muted)}.flag{padding:8px 9px;margin:6px 0;border-radius:8px;background:#20232b;font-size:12px}
+.notice{margin-bottom:14px;padding:10px 12px;border:1px solid var(--line);background:#14161c;border-radius:10px;color:#b9bdc8;font-size:12px}
+footer{padding:20px;text-align:center;color:#777;font-size:11px}
+@media(max-width:980px){.board{grid-template-columns:1fr}.rail{border:0!important}.main{order:1}.rail:first-child{order:0}.rail:last-child{order:2}.grid{grid-template-columns:1fr}.teamcard{min-height:100px}}
+@media(max-width:600px){.wrap{padding:8px}.top{padding:10px}.brand small,.status span{display:none}.main{padding:12px 7px}.offer{grid-template-columns:1fr 18px 1fr;gap:5px}.slot{min-height:68px;padding:5px}.pname{font-size:11px}.pmeta{font-size:9px}.ovr{font-size:14px;padding:5px}.head h1{font-size:24px}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="logo">FM2</div>
+  <div class="brand"><b>TRADE LAB</b><small>NeonSportz franchise trade simulator</small></div>
+  <div class="status"><i class="dot" id="dot"></i><span id="status">Loading FM2 snapshot…</span></div>
+  <button class="sync" id="sync">Refresh</button>
+</header>
+<main class="wrap">
+<div class="notice" id="notice">This site reads the automatically refreshed FM2 snapshot generated by GitHub Actions. Draft-pick ownership is not yet verified, so this build focuses on real player, contract, cap and trade-value data.</div>
+<section class="board">
+  <aside class="rail" id="leftRail"></aside>
+  <section class="main">
+    <div class="head"><div><div class="label">TRADE BUILDER</div><h1>Build the deal.</h1></div><div class="badge" id="badge">SYNCING</div></div>
+    <div class="offer">
+      <div><div class="label" id="leftLabel">TEAM A SENDS</div><div class="stack" id="leftStack"></div></div>
+      <div class="mid">⇄</div>
+      <div><div class="label" id="rightLabel">TEAM B SENDS</div><div class="stack" id="rightStack"></div></div>
+    </div>
+    <div class="actions"><button class="primary" id="evaluate">Evaluate trade</button><button class="secondary" id="reset">Reset</button></div>
+  </section>
+  <aside class="rail" id="rightRail"></aside>
+</section>
+<section class="analysis">
+  <div class="grid">
+    <div class="card"><div class="label">TRADE VALUE</div><div class="values"><span id="lv">0</span><span class="arrow">⇄</span><span id="rv">0</span></div><div class="bar"><i class="marker" id="marker"></i></div><div class="muted" id="verdict">Add players to both sides.</div></div>
+    <div class="card"><div class="label">CURRENT-YEAR CAP</div><div id="cap"></div></div>
+    <div class="card"><div class="label">SMART FLAGS</div><div id="flags"></div></div>
+  </div>
+</section>
+</main>
+<footer>FM2 Trade Lab · FM2 data refreshed through GitHub Actions every 15 minutes</footer>
+<script>
+const $=s=>document.querySelector(s);
+const TEAM_META={
+ARI:['Arizona','Cardinals','#97233F','#4b1020','ari'],ATL:['Atlanta','Falcons','#A71930','#111','atl'],BAL:['Baltimore','Ravens','#241773','#111','bal'],BUF:['Buffalo','Bills','#00338D','#C60C30','buf'],CAR:['Carolina','Panthers','#0085CA','#101820','car'],CHI:['Chicago','Bears','#0B162A','#C83803','chi'],CIN:['Cincinnati','Bengals','#FB4F14','#111','cin'],CLE:['Cleveland','Browns','#311D00','#FF3C00','cle'],DAL:['Dallas','Cowboys','#041E42','#869397','dal'],DEN:['Denver','Broncos','#FB4F14','#002244','den'],DET:['Detroit','Lions','#0076B6','#B0B7BC','det'],GB:['Green Bay','Packers','#203731','#FFB612','gb'],HOU:['Houston','Texans','#03202F','#A71930','hou'],IND:['Indianapolis','Colts','#002C5F','#A2AAAD','ind'],JAX:['Jacksonville','Jaguars','#006778','#101820','jax'],KC:['Kansas City','Chiefs','#E31837','#FFB81C','kc'],LV:['Las Vegas','Raiders','#000','#A5ACAF','lv'],LAC:['Los Angeles','Chargers','#0080C6','#FFC20E','lac'],LAR:['Los Angeles','Rams','#003594','#FFA300','lar'],MIA:['Miami','Dolphins','#008E97','#FC4C02','mia'],MIN:['Minnesota','Vikings','#4F2683','#FFC62F','min'],NE:['New England','Patriots','#002244','#C60C30','ne'],NO:['New Orleans','Saints','#D3BC8D','#101820','no'],NYG:['New York','Giants','#0B2265','#A71930','nyg'],NYJ:['New York','Jets','#125740','#101820','nyj'],PHI:['Philadelphia','Eagles','#004C54','#A5ACAF','phi'],PIT:['Pittsburgh','Steelers','#101820','#FFB612','pit'],SEA:['Seattle','Seahawks','#002244','#69BE28','sea'],SF:['San Francisco','49ers','#AA0000','#B3995D','sf'],TB:['Tampa Bay','Buccaneers','#D50A0A','#34302B','tb'],TEN:['Tennessee','Titans','#0C2340','#4B92DB','ten'],WAS:['Washington','Commanders','#5A1414','#FFB612','wsh']};
+let data={teams:[],players:[],meta:{}}, left='ARI',right='CHI', L=[],R=[];
+const fmt=n=>n==null?'—':'$'+Number(n).toFixed(1)+'M';
+const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+function team(ab){return data.teams.find(t=>t.abbr===ab)||{abbr:ab,city:TEAM_META[ab]?.[0]||ab,name:TEAM_META[ab]?.[1]||'',c1:TEAM_META[ab]?.[2]||'#333',c2:TEAM_META[ab]?.[3]||'#111',logo:'https://a.espncdn.com/i/teamlogos/nfl/500/'+(TEAM_META[ab]?.[4]||'nfl')+'.png',capAvailable:null,needs:[]}}
+function roster(ab){return data.players.filter(p=>p.team===ab).sort((a,b)=>(b.ovr||0)-(a.ovr||0))}
+function value(p){if(Number.isFinite(+p.value))return +p.value;let v=(p.ovr||60)**2/2;v*=p.age?Math.max(.55,1.35-(p.age-22)*.055):1;v*=p.dev==='X-FACTOR'?1.35:p.dev==='SUPERSTAR'?1.2:p.dev==='STAR'?1.08:1;return Math.round(v)}
+function incoming(p){return Number.isFinite(+p.tradeInCap)?+p.tradeInCap:Number(p.capHit||0)}
+function savings(p){return Number.isFinite(+p.net)?+p.net:Math.max(0,Number(p.capHit||0)-Number(p.currentPenalty||0))}
+function initials(n){return String(n||'?').split(/\s+/).map(x=>x[0]).slice(0,2).join('')}
+function deriveNeeds(ab){const groups={QB:['QB'],RB:['HB','FB'],WR:['WR'],TE:['TE'],OL:['LT','LG','C','RG','RT'],DL:['LE','RE','DT'],LB:['LOLB','MLB','ROLB'],CB:['CB'],S:['FS','SS']};return Object.entries(groups).map(([g,pos])=>[g,roster(ab).filter(p=>pos.includes(p.pos)).slice(0,3).reduce((s,p)=>s+(p.ovr||0),0)]).sort((a,b)=>a[1]-b[1]).slice(0,5).map(x=>x[0])}
+function options(selected){return Object.keys(TEAM_META).map(a=>'<option value="'+a+'" '+(a===selected?'selected':'')+'>'+a+' · '+TEAM_META[a][0]+' '+TEAM_META[a][1]+'</option>').join('')}
+function rail(side,ab){
+ const t=team(ab),other=side==='left'?right:left,needs=t.needs?.length?t.needs:deriveNeeds(ab),assets=side==='left'?L:R;
+ const outgoing=assets.reduce((s,p)=>s+savings(p),0),incomingCost=(side==='left'?R:L).reduce((s,p)=>s+incoming(p),0),after=(t.capAvailable==null?null:t.capAvailable+outgoing-incomingCost);
+ return '<select class="teamselect" data-side="'+side+'">'+options(ab)+'</select>'+
+ '<div class="teamcard" style="--c1:'+esc(t.c1||TEAM_META[ab]?.[2])+';--c2:'+esc(t.c2||TEAM_META[ab]?.[3])+'"><img src="'+esc(t.logo)+'" onerror="this.style.display=\'none\'"><div class="city">'+esc(t.city)+'</div><div class="name">'+esc(t.name)+'</div></div>'+
+ '<div class="metric"><div class="label">CAP AVAILABLE</div><div class="big">'+fmt(t.capAvailable)+'</div><div class="muted">After proposed trade: '+fmt(after)+'</div></div>'+
+ '<div class="metric"><div class="label">TEAM NEEDS</div><div class="needs">'+needs.map(n=>'<span class="chip">'+esc(n)+'</span>').join('')+'</div></div>'+
+ '<div class="metric"><div class="label">ROSTER</div><div class="big">'+roster(ab).length+'</div><div class="muted">players loaded</div></div>';
+}
+function playerSelect(side,idx,ab,selectedId){
+ const taken=new Set((side==='left'?L:R).map(p=>String(p.id))); if(selectedId)taken.delete(String(selectedId));
+ const opts=roster(ab).filter(p=>!taken.has(String(p.id))).map(p=>'<option value="'+esc(p.id)+'" '+(String(p.id)===String(selectedId)?'selected':'')+'>'+esc(p.name)+' · '+esc(p.pos)+' · '+(p.ovr??'?')+' OVR</option>').join('');
+ return '<select class="playerpick" data-side="'+side+'" data-idx="'+idx+'"><option value="">+ Select player</option>'+opts+'</select>';
+}
+function slots(side,ab,assets){
+ let s=''; for(let i=0;i<6;i++){const p=assets[i]; if(!p){s+='<div class="slot empty">'+playerSelect(side,i,ab,null)+'</div>';continue}
+ const img=p.headshot?'<img src="'+esc(p.headshot)+'" style="width:48px;height:48px;border-radius:50%;object-fit:cover" onerror="this.replaceWith(document.createTextNode(\''+initials(p.name)+'\'))">':'<div style="width:48px;height:48px;border-radius:50%;display:grid;place-items:center;background:#292c36;font-weight:1000">'+initials(p.name)+'</div>';
+ s+='<div class="slot">'+img+'<div><div class="pname">'+esc(p.name)+'</div><div class="pmeta">'+esc(p.pos)+' · '+esc(p.dev||'NORMAL')+' · Cap '+fmt(p.capHit)+'</div></div><span class="ovr">'+(p.ovr??'?')+'</span><button data-remove="'+side+':'+i+'">×</button></div>'}
+ return s;
+}
+function render(){
+ $('#leftRail').innerHTML=rail('left',left);$('#rightRail').innerHTML=rail('right',right);$('#leftLabel').textContent=left+' SENDS';$('#rightLabel').textContent=right+' SENDS';$('#leftStack').innerHTML=slots('left',left,L);$('#rightStack').innerHTML=slots('right',right,R);
+ document.querySelectorAll('.teamselect').forEach(x=>x.onchange=()=>{if(x.dataset.side==='left'){left=x.value;L=[];if(left===right)right=Object.keys(TEAM_META).find(a=>a!==left)}else{right=x.value;R=[];if(right===left)left=Object.keys(TEAM_META).find(a=>a!==right)}render();evaluate()});
+ document.querySelectorAll('.playerpick').forEach(x=>x.onchange=()=>{if(!x.value)return;const p=data.players.find(p=>String(p.id)===x.value);if(!p)return;const arr=x.dataset.side==='left'?L:R;arr[+x.dataset.idx]=p;render();evaluate()});
+ document.querySelectorAll('[data-remove]').forEach(b=>b.onclick=()=>{const [side,i]=b.dataset.remove.split(':');(side==='left'?L:R).splice(+i,1);render();evaluate()});
+ evaluate();
+}
+function evaluate(){
+ const lval=L.reduce((s,p)=>s+value(p),0),rval=R.reduce((s,p)=>s+value(p),0);$('#lv').textContent=Math.round(lval).toLocaleString();$('#rv').textContent=Math.round(rval).toLocaleString();
+ const total=lval+rval,diff=total?((rval-lval)/total):0;$('#marker').style.left=(50+Math.max(-45,Math.min(45,diff*100)))+'%';
+ let txt='Add players to both sides.';if(total){const pct=Math.abs(rval-lval)/Math.max(lval,rval)*100;txt=pct<8?'Values are very close.':pct<20?'Values are within a moderate range.':(lval>rval?left:right)+' is sending substantially more trade value.'}$('#verdict').textContent=txt;
+ const lt=team(left),rt=team(right),lAfter=lt.capAvailable==null?null:lt.capAvailable+L.reduce((s,p)=>s+savings(p),0)-R.reduce((s,p)=>s+incoming(p),0),rAfter=rt.capAvailable==null?null:rt.capAvailable+R.reduce((s,p)=>s+savings(p),0)-L.reduce((s,p)=>s+incoming(p),0);
+ $('#cap').innerHTML='<div class="row"><span>'+left+' current</span><b>'+fmt(lt.capAvailable)+'</b></div><div class="row"><span>'+left+' after</span><b>'+fmt(lAfter)+'</b></div><div class="row"><span>'+right+' current</span><b>'+fmt(rt.capAvailable)+'</b></div><div class="row"><span>'+right+' after</span><b>'+fmt(rAfter)+'</b></div>';
+ const f=[];[...L,...R].forEach(p=>{if(p.cantTrade)f.push(p.name+' is marked cannot trade.');if((p.currentPenalty||0)>15)f.push(p.name+' carries a large release penalty.');if(p.tradeBlock)f.push(p.name+' is on the trade block.')});if(lAfter!=null&&lAfter<0)f.push(left+' would be over the cap.');if(rAfter!=null&&rAfter<0)f.push(right+' would be over the cap.');if(!f.length)f.push('No major flags detected from the loaded FM2 data.');$('#flags').innerHTML=f.map(x=>'<div class="flag">'+esc(x)+'</div>').join('');
+}
+async function load(){
+ try{
+   $('#status').textContent='Loading FM2 snapshot…';
+   const r=await fetch('./data/fm2-data.json?ts='+Date.now(),{cache:'no-store'});if(!r.ok)throw new Error('HTTP '+r.status);const x=await r.json();if(!Array.isArray(x.players)||x.players.length<20)throw new Error('Snapshot is empty');
+   data=x;const teamsWithPlayers=new Set(data.players.map(p=>p.team));if(!teamsWithPlayers.has(left))left=[...teamsWithPlayers][0]||'ARI';if(!teamsWithPlayers.has(right)||right===left)right=[...teamsWithPlayers].find(a=>a!==left)||'CHI';
+   $('#dot').className='dot live';$('#badge').textContent='LIVE FM2 · '+data.players.length+' PLAYERS';$('#status').textContent='FM2 synced '+(data.meta?.lastSync?new Date(data.meta.lastSync).toLocaleString():'');render();
+ }catch(e){$('#dot').className='dot error';$('#badge').textContent='SYNC ERROR';$('#status').textContent='FM2 snapshot unavailable';$('#notice').textContent='The GitHub Pages site is online, but the FM2 data sync has not completed yet. Check the GitHub Actions run for the exact NeonSportz API error.';render()}
+}
+$('#sync').onclick=()=>load();$('#evaluate').onclick=evaluate;$('#reset').onclick=()=>{L=[];R=[];render()};load();
+</script>
+</body>
+</html>
