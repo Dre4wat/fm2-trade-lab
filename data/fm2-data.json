@@ -1,0 +1,10 @@
+{
+  "meta": {
+    "league": "FM2",
+    "mode": "empty",
+    "lastSync": null,
+    "note": "This file is replaced in the deployed GitHub Pages artifact by scripts/sync-neon.mjs."
+  },
+  "teams": [],
+  "players": []
+}
