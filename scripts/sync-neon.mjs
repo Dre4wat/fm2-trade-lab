@@ -215,6 +215,7 @@ for(let i=0;i<rawTeams.length;i++){
 }
 for(const t of mappedTeams){teamIdMap.set(String(t.id),t.abbr); if(t.logoId!=null) teamIdMap.set(String(t.logoId),t.abbr);}
 const rawPlayers=await fetchAll('/players/','players');
+if(rawPlayers[0]) console.log('Player sample keys:',Object.keys(rawPlayers[0]).join(','));
 if(rawPlayers.length<20) throw new Error(`Expected a full roster, received ${rawPlayers.length} players`);
 const players=rawPlayers.map((r,i)=>mapPlayer(r,i,teamIdMap)).filter(Boolean);
 if(players.length<20) throw new Error(`Only ${players.length} players could be mapped to teams`);
