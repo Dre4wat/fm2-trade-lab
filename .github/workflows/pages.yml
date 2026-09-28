@@ -38,7 +38,7 @@ jobs:
         run: |
           rm -rf dist
           mkdir -p dist/data
-          cp index.html dist/index.html
+          cat scripts/sitebundle.part1 scripts/sitebundle.part2 scripts/sitebundle.part3 scripts/sitebundle.part4 | base64 -d | tar -xzf - -C dist
           cp data/fm2-data.json dist/data/fm2-data.json
           touch dist/.nojekyll
 
