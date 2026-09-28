@@ -61,10 +61,10 @@ function devLabel(raw){
 function extractPage(payload){
   if(Array.isArray(payload)) return {items:payload,count:payload.length,next:null};
   if(!payload||typeof payload!=='object') return {items:[],count:0,next:null};
-  let items=[]; for(const k of ['results','data','items','players','teams']) if(Array.isArray(payload[k])){items=payload[k];break;}
+  let items=[]; for(const k of ['results','data','items','players','teams','games','standings','transactions','trades','stats']) if(Array.isArray(payload[k])){items=payload[k];break;}
   return {items,count:num(payload.count??payload.total??payload.totalCount??payload.total_count),next:payload.next??payload.links?.next??payload.nextPage??payload.next_page??null};
 }
-function identity(r){return String(getField(r,['id','playerId','player_id','rosterId','roster_id','teamId','team_id'])??JSON.stringify(r).slice(0,120));}
+function identity(r){return String(getField(r,['id','playerId','player_id','rosterId','roster_id','teamId','team_id','gameId','game_id','scheduleId','standingId'])??JSON.stringify(r).slice(0,120));}
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 async function fetchJson(url,retries=5){
   const res=await fetch(url,{headers:{Accept:'application/json','User-Agent':'fm2-trade-lab-github-action'},redirect:'follow'});
@@ -90,6 +90,18 @@ async function fetchAll(endpoint,label){
     if(items.length<PAGE_SIZE||next===false||next==='') break;
   }
   return out;
+}
+async function safeFetchAll(endpoint,label){
+  try{return await fetchAll(endpoint,label);}
+  catch(err){console.warn(`Optional ${label} sync skipped: ${err.message}`);return [];}
+}
+function stageLabel(v){
+  const n=num(v);
+  if(n===0) return 'Preseason';
+  if(n===1) return 'Regular Season';
+  if(n===2) return 'Post Season';
+  if(n===3) return 'Offseason';
+  return v==null?'':String(v);
 }
 function mapTeam(r){
   let abbr=canonicalTeam(getField(r,['abbrName','abbr','abbreviation','teamAbbr','team_abbrev']));
@@ -135,6 +147,56 @@ function mapPlayer(r,i,teamIdMap){
     tradeBlock:bool(getField(r,['trade_block','tradeBlock','onTradeBlock'])),cantTrade:bool(getField(r,['cant_trade','cantTrade','cannotTrade'])),portraitId,
     headshot:portraitId!=null&&String(portraitId)!==''?`https://ratings-images-prod.pulse.ea.com/madden-nfl-27/portraits/${encodeURIComponent(portraitId)}.png`:null,source:'github-auto-sync'};
 }
+
+function resolveAnyTeam(raw,teamIdMap){
+  const direct=canonicalTeam(raw); if(direct) return direct;
+  if(raw&&typeof raw==='object'){
+    const id=getField(raw,['teamId','team_id','id']); if(id!=null&&teamIdMap.has(String(id))) return teamIdMap.get(String(id));
+    const name=getField(raw,['abbrName','abbr','abbreviation','teamAbbr','team_abbrev','nickName','teamName','displayName','name']);
+    const c=canonicalTeam(name); if(c) return c;
+  }
+  if(raw!=null&&teamIdMap.has(String(raw))) return teamIdMap.get(String(raw));
+  return null;
+}
+function mapGame(r,i,teamIdMap){
+  const home=resolveAnyTeam(getField(r,['homeTeam','home','homeTeamId','home_team','homeTeamAbbr','homeAbbr']),teamIdMap);
+  const away=resolveAnyTeam(getField(r,['awayTeam','away','awayTeamId','away_team','awayTeamAbbr','awayAbbr']),teamIdMap);
+  const homeScore=num(getField(r,['homeScore','homeTeamScore','scoreHome','home_score','homePts','homePoints']));
+  const awayScore=num(getField(r,['awayScore','awayTeamScore','scoreAway','away_score','awayPts','awayPoints']));
+  const weekIndex=num(getField(r,['weekIndex','week','weekNum','weekNumber']));
+  const stageIndex=num(getField(r,['stageIndex','stage','seasonType']));
+  const year=num(getField(r,['calendarYear','seasonYear','year']));
+  const statusRaw=getField(r,['status','gameStatus','state','gameState']);
+  const played=homeScore!=null&&awayScore!=null&&(homeScore!==0||awayScore!==0||String(statusRaw||'').toLowerCase().includes('final')||bool(getField(r,['played','isPlayed','completed'])));
+  return {
+    id:String(getField(r,['gameId','game_id','scheduleId','id'])??`game-${i}`),
+    home,away,homeScore,awayScore,played,
+    weekIndex,week:weekIndex!=null?weekIndex+1:null,
+    stageIndex,stage:stageLabel(stageIndex),year,
+    status:statusRaw==null?(played?'Final':'Scheduled'):String(statusRaw),
+    date:getField(r,['date','gameDate','scheduledAt','startTime','kickoff','time']),
+    rawWeek:getField(r,['weekType','weekLabel'])
+  };
+}
+function mapStanding(r,i,teamIdMap){
+  const team=resolveAnyTeam(getField(r,['team','teamId','team_id','abbrName','abbr','teamAbbr','team_abbrev']),teamIdMap);
+  return {
+    id:String(getField(r,['standingId','id'])??`standing-${i}`),
+    team,
+    wins:num(getField(r,['wins','win','w'])),
+    losses:num(getField(r,['losses','loss','l'])),
+    ties:num(getField(r,['ties','tie','t'])),
+    pct:num(getField(r,['winPct','winPercentage','pct','percentage'])),
+    pointsFor:num(getField(r,['pointsFor','ptsFor','pf'])),
+    pointsAgainst:num(getField(r,['pointsAgainst','ptsAgainst','pa'])),
+    division:getField(r,['divisionName','division','divisionId']),
+    conference:getField(r,['conferenceName','conference','conferenceId']),
+    seed:num(getField(r,['seed','playoffSeed','rank','standing'])),
+    streak:getField(r,['streak','winLossStreak']),
+    netPoints:num(getField(r,['netPoints','pointDiff','pointDifferential']))
+  };
+}
+
 function deriveMeta(rawTeams){
   const r=rawTeams[0]||{}; const year=num(getField(r,['calendarYear','seasonYear','year'])); const stageIndex=num(getField(r,['stageIndex'])); const weekIndex=num(getField(r,['weekIndex']));
   const stage=stageIndex===0?'Preseason':stageIndex===1?'Regular Season':stageIndex===2?'Post Season':stageIndex===3?'Offseason':'';
@@ -157,6 +219,13 @@ if(rawPlayers.length<20) throw new Error(`Expected a full roster, received ${raw
 const players=rawPlayers.map((r,i)=>mapPlayer(r,i,teamIdMap)).filter(Boolean);
 if(players.length<20) throw new Error(`Only ${players.length} players could be mapped to teams`);
 
+const rawGames=await safeFetchAll('/games/','games');
+const games=rawGames.map((r,i)=>mapGame(r,i,teamIdMap)).filter(g=>g.home||g.away);
+if(rawGames[0]) console.log('Game sample keys:',Object.keys(rawGames[0]).join(','));
+const rawStandings=await safeFetchAll('/standings/','standings');
+const standings=rawStandings.map((r,i)=>mapStanding(r,i,teamIdMap)).filter(s=>s.team);
+if(rawStandings[0]) console.log('Standing sample keys:',Object.keys(rawStandings[0]).join(','));
+
 const teamMap=new Map(TEAM_META.map(t=>[t.abbr,{...t,capAvailable:null,capRoom:null,capSpent:null,rosterCount:0,needs:[]} ]));
 for(const t of mappedTeams) teamMap.set(t.abbr,{...teamMap.get(t.abbr),...t});
 for(const t of teamMap.values()){
@@ -164,7 +233,7 @@ for(const t of teamMap.values()){
   if(count||t.rosterCount==null) t.rosterCount=count;
 }
 
-const data={meta:deriveMeta(rawTeams),teams:[...teamMap.values()],players};
+const data={meta:deriveMeta(rawTeams),teams:[...teamMap.values()],players,games,standings};
 await mkdir(new URL('../data/',import.meta.url),{recursive:true});
 await writeFile(OUT,JSON.stringify(data),{encoding:'utf8'});
-console.log(`Wrote ${players.length} players and ${data.teams.length} teams to data/fm2-data.json`);
+console.log(`Wrote ${players.length} players, ${data.teams.length} teams, ${games.length} games and ${standings.length} standings rows to data/fm2-data.json`);
