@@ -125,6 +125,23 @@ function resolvePlayerTeam(r,map){
   const nid=r.team&&typeof r.team==='object'?getField(r.team,['teamId','id']):null; if(nid!=null&&map.has(String(nid))) return map.get(String(nid));
   return null;
 }
+function bestArchetype(r){
+  const defs=[
+    ['Strong Arm','strongArmQBArchRating'],['Field General','fieldGeneralQBArchRating'],['Scrambler','scramblerQBArchRating'],['Improviser','improviserQBArchRating'],
+    ['Elusive Back','elusiveBackHBArchRating'],['Power Back','powerBackHBArchRating'],['Receiving Back','receivingBackHBArchRating'],
+    ['Blocking FB','blockingFBArchRating'],['Utility FB','utilityFBArchRating'],['Power FB','powerFBArchRating'],
+    ['Vertical Threat','verticalThreatTEArchRating'],['Possession','possessionTEArchRating'],['Blocking TE','blockingTEArchRating'],
+    ['Deep Threat','deepThreatWRArchRating'],['Slot','slotWRArchRating'],['Physical','physicalWRArchRating'],['Route Runner','routeRunnerWRArchRating'],
+    ['Pass Protector','passProtectorOLArchRating'],['Power OL','powerOLArchRating'],['Agile OL','agileOLArchRating'],
+    ['Speed Rusher DL','speedRusherDLArchRating'],['Power Rusher DL','powerRusherDLArchRating'],['Run Stopper DL','runStopperDLArchRating'],
+    ['Field General LB','fieldGeneralLBArchRating'],['Pass Coverage LB','passCoverageLBArchRating'],['Run Stopper LB','runStopperLBArchRating'],['Speed Rusher LB','speedRusherLBArchRating'],['Power Rusher LB','powerRusherLBArchRating'],
+    ['Man to Man','mantoManCBArchRating'],['Zone CB','zoneCBArchRating'],['Slot CB','slotCBArchRating'],
+    ['Hybrid Safety','hybridSArchRating'],['Zone Safety','zoneSArchRating'],['Run Support Safety','runSupportSArchRating'],
+    ['Power Kicker','powerKArchRating'],['Accurate Kicker','accurateKArchRating'],['Power Punter','powerPArchRating'],['Accurate Punter','accuratePArchRating']
+  ];
+  const vals=defs.map(([label,key])=>({label,val:num(getField(r,[key]))})).filter(x=>x.val!=null);
+  vals.sort((a,b)=>b.val-a.val); return vals[0]?.label||null;
+}
 function mapPlayer(r,i,teamIdMap){
   const name=getField(r,['fullName','playerName','cleanName','name'])||[getField(r,['firstName']),getField(r,['lastName'])].filter(Boolean).join(' ');
   const team=resolvePlayerTeam(r,teamIdMap); if(!name||!team) return null;
@@ -140,12 +157,24 @@ function mapPlayer(r,i,teamIdMap){
   const portraitId=getField(r,['portraitId','portrait_id']);
   const currentPenalty=net!=null&&capHit!=null?Math.max(0,capHit-net):Math.min(releasePenaltyTotal||0,capHit||0);
   const len=Math.max(1,contractLength||yearsLeft||1); const tradeInCap=Math.max(0,(capHit||0)-((contractBonus||0)/Math.min(len,5)));
+  const customPortrait=getField(r,['custom_portrait_url','customPortraitUrl']);
+  const ratings={
+    speed:num(getField(r,['speedRating'])),acceleration:num(getField(r,['accelRating'])),agility:num(getField(r,['agilityRating'])),awareness:num(getField(r,['awareRating'])),strength:num(getField(r,['strengthRating'])),jumping:num(getField(r,['jumpRating'])),stamina:num(getField(r,['staminaRating'])),toughness:num(getField(r,['toughRating'])),injury:num(getField(r,['injuryRating'])),changeOfDirection:num(getField(r,['changeOfDirectionRating'])),
+    impactBlock:num(getField(r,['impactBlockRating'])),leadBlock:num(getField(r,['leadBlockRating'])),passBlock:num(getField(r,['passBlockRating'])),passBlockPower:num(getField(r,['passBlockPowerRating'])),passBlockFinesse:num(getField(r,['passBlockFinesseRating'])),runBlock:num(getField(r,['runBlockRating'])),runBlockPower:num(getField(r,['runBlockPowerRating'])),runBlockFinesse:num(getField(r,['runBlockFinesseRating'])),
+    breakSack:num(getField(r,['breakSackRating'])),throwPower:num(getField(r,['throwPowerRating'])),shortAccuracy:num(getField(r,['throwAccShortRating'])),mediumAccuracy:num(getField(r,['throwAccMidRating'])),deepAccuracy:num(getField(r,['throwAccDeepRating'])),throwAccuracy:num(getField(r,['throwAccRating'])),throwOnRun:num(getField(r,['throwOnRunRating'])),underPressure:num(getField(r,['throwUnderPressureRating'])),playAction:num(getField(r,['playActionRating'])),
+    bcVision:num(getField(r,['bCVRating'])),breakTackle:num(getField(r,['breakTackleRating'])),catching:num(getField(r,['catchRating'])),carrying:num(getField(r,['carryRating'])),catchInTraffic:num(getField(r,['cITRating'])),juke:num(getField(r,['jukeMoveRating'])),spin:num(getField(r,['spinMoveRating'])),stiffArm:num(getField(r,['stiffArmRating'])),trucking:num(getField(r,['truckRating'])),release:num(getField(r,['releaseRating'])),shortRoute:num(getField(r,['routeRunShortRating'])),mediumRoute:num(getField(r,['routeRunMedRating'])),deepRoute:num(getField(r,['routeRunDeepRating'])),spectacularCatch:num(getField(r,['specCatchRating'])),
+    finesseMoves:num(getField(r,['finesseMovesRating'])),hitPower:num(getField(r,['hitPowerRating'])),blockShedding:num(getField(r,['blockShedRating'])),manCoverage:num(getField(r,['manCoverRating'])),playRecognition:num(getField(r,['playRecRating'])),powerMoves:num(getField(r,['powerMovesRating'])),press:num(getField(r,['pressRating'])),pursuit:num(getField(r,['pursuitRating'])),tackle:num(getField(r,['tackleRating'])),zoneCoverage:num(getField(r,['zoneCoverRating'])),
+    kickAccuracy:num(getField(r,['kickAccRating'])),kickPower:num(getField(r,['kickPowerRating']))
+  };
   return {id:String(id),pageId:String(pageId),team,name:String(name).trim(),pos:String(getField(r,['position','pos'])||'').toUpperCase(),dev:devLabel(getField(r,['devTrait','dev','developmentTrait','development'])),
-    ovr:num(getField(r,['playerBestOvr','overall','ovr','playerSchemeOvr'])),age:num(getField(r,['age'])),height:getField(r,['height']),weight:num(getField(r,['weight'])),jersey:num(getField(r,['jerseyNum','jerseyNumber'])),
-    college:getField(r,['college']),draftRound:num(getField(r,['draftRound'])),draftPick:num(getField(r,['draftPick'])),yearsPro:num(getField(r,['yearsPro'])),rookieYear:num(getField(r,['rookieYear'])),
-    capHit,net,releasePenaltyTotal,currentPenalty,contractBonus,contractSalary,contractLength,yearsLeft,tradeInCap,value:num(getField(r,['trade_value','tradeValue','value','tradeVal'])),speed:num(getField(r,['speedRating','speed','spd'])),
-    tradeBlock:bool(getField(r,['trade_block','tradeBlock','onTradeBlock'])),cantTrade:bool(getField(r,['cant_trade','cantTrade','cannotTrade'])),portraitId,
-    headshot:portraitId!=null&&String(portraitId)!==''?`https://ratings-images-prod.pulse.ea.com/madden-nfl-27/portraits/${encodeURIComponent(portraitId)}.png`:null,source:'github-auto-sync'};
+    ovr:num(getField(r,['playerBestOvr','overall','ovr','playerSchemeOvr'])),schemeOvr:num(getField(r,['playerSchemeOvr'])),teamSchemeOvr:num(getField(r,['teamSchemeOvr'])),age:num(getField(r,['age'])),height:getField(r,['height']),weight:num(getField(r,['weight'])),jersey:num(getField(r,['jerseyNum','jerseyNumber'])),
+    college:getField(r,['college']),homeTown:getField(r,['homeTown']),homeState:getField(r,['homeState']),draftRound:num(getField(r,['draftRound'])),draftPick:num(getField(r,['draftPick'])),yearsPro:num(getField(r,['yearsPro'])),rookieYear:num(getField(r,['rookieYear'])),experiencePoints:num(getField(r,['experiencePoints'])),legacyScore:num(getField(r,['legacyScore'])),skillPoints:num(getField(r,['skillPoints'])),scheme:getField(r,['scheme']),reSignStatus:getField(r,['reSignStatus']),archetype:bestArchetype(r),
+    capHit,net,releasePenaltyTotal,currentPenalty,contractBonus,contractSalary,contractLength,yearsLeft,tradeInCap,desiredSalary:moneyM(getField(r,['desiredSalary'])),desiredBonus:moneyM(getField(r,['desiredBonus'])),desiredLength:num(getField(r,['desiredLength'])),value:num(getField(r,['trade_value','tradeValue','value','tradeVal'])),speed:ratings.speed,
+    injury:getField(r,['injury']),injuryType:getField(r,['injuryType']),injuryLength:num(getField(r,['injuryLength'])),isActive:bool(getField(r,['isActive'])),isFreeAgent:bool(getField(r,['isFreeAgent'])),isOnIR:bool(getField(r,['isOnIR'])),isOnPracticeSquad:bool(getField(r,['isOnPracticeSquad'])),
+    grades:{durability:getField(r,['durabilityGrade']),intangible:getField(r,['intangibleGrade']),physical:getField(r,['physicalGrade']),production:getField(r,['productionGrade']),size:getField(r,['sizeGrade'])},
+    traits:{clutch:getField(r,['clutchTrait']),highMotor:getField(r,['highMotorTrait']),penalty:getField(r,['penaltyTrait']),predict:getField(r,['predictTrait']),tightSpiral:getField(r,['tightSpiralTrait']),throwAway:getField(r,['throwAwayTrait']),coverBall:getField(r,['coverBallTrait']),bigHit:getField(r,['bigHitTrait']),stripBall:getField(r,['stripBallTrait'])},
+    ratings,tradeBlock:bool(getField(r,['trade_block','tradeBlock','onTradeBlock'])),cantTrade:bool(getField(r,['cant_trade','cantTrade','cannotTrade'])),portraitId,
+    headshot:customPortrait||((portraitId!=null&&String(portraitId)!=='')?`https://ratings-images-prod.pulse.ea.com/madden-nfl-27/portraits/${encodeURIComponent(portraitId)}.png`:null),source:'github-auto-sync'};
 }
 
 function resolveAnyTeam(raw,teamIdMap){
@@ -189,6 +218,11 @@ function mapStanding(r,i,teamIdMap){
     pct:num(getField(r,['winPct','winPercentage','pct','percentage'])),
     pointsFor:num(getField(r,['pointsFor','ptsFor','pf'])),
     pointsAgainst:num(getField(r,['pointsAgainst','ptsAgainst','pa'])),
+    pointsForRank:num(getField(r,['ptsForRank'])),pointsAgainstRank:num(getField(r,['ptsAgainstRank'])),
+    offPassYds:num(getField(r,['offPassYds'])),offPassYdsRank:num(getField(r,['offPassYdsRank'])),offRushYds:num(getField(r,['offRushYds'])),offRushYdsRank:num(getField(r,['offRushYdsRank'])),offTotalYds:num(getField(r,['offTotalYds'])),offTotalYdsRank:num(getField(r,['offTotalYdsRank'])),
+    defPassYds:num(getField(r,['defPassYds'])),defPassYdsRank:num(getField(r,['defPassYdsRank'])),defRushYds:num(getField(r,['defRushYds'])),defRushYdsRank:num(getField(r,['defRushYdsRank'])),defTotalYds:num(getField(r,['defTotalYds'])),defTotalYdsRank:num(getField(r,['defTotalYdsRank'])),
+    turnoverDiff:num(getField(r,['tODiff'])),playoffStatus:getField(r,['playoffStatus']),rank:num(getField(r,['rank'])),teamOvr:num(getField(r,['teamOvr','ovrRating'])),userName:getField(r,['userName']),
+    offScheme:getField(r,['offScheme']),defScheme:getField(r,['defScheme']),injuryCount:num(getField(r,['injuryCount'])),
     division:getField(r,['divisionName','divName','division','divisionId']),
     conference:getField(r,['conferenceName','conference','conferenceId']),
     seed:num(getField(r,['seed','playoffSeed','rank','standing'])),
