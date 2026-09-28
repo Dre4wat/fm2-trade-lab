@@ -38,7 +38,21 @@ jobs:
         run: |
           rm -rf dist
           mkdir -p dist/data
-          cat scripts/sitebundle.part1 scripts/sitebundle.part2 scripts/sitebundle.part3 scripts/sitebundle.part4 scripts/sitebundle.part5 | base64 -d | tar -xzf - -C dist
+          curl -fsSL https://dre4wat.github.io/fm2-trade-lab/index.html -o dist/index.html
+          curl -fsSL https://dre4wat.github.io/fm2-trade-lab/styles.css -o dist/styles.css
+          curl -fsSL https://dre4wat.github.io/fm2-trade-lab/app.js -o dist/app.js
+          cp profiles.js dist/profiles.js
+          cp profiles.css dist/profiles.css
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('dist/index.html')
+          s=p.read_text()
+          if 'profiles.css' not in s:
+              s=s.replace('</head>','  <link rel="stylesheet" href="./profiles.css" />\n</head>')
+          if 'profiles.js' not in s:
+              s=s.replace('</body>','  <script src="./profiles.js" defer></script>\n</body>')
+          p.write_text(s)
+          PY
           cp data/fm2-data.json dist/data/fm2-data.json
           touch dist/.nojekyll
 
