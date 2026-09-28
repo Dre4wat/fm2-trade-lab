@@ -174,7 +174,7 @@ function mapGame(r,i,teamIdMap){
     weekIndex,week:weekIndex!=null?weekIndex+1:null,
     stageIndex,stage:stageLabel(stageIndex),year,
     status:statusRaw==null?(played?'Final':'Scheduled'):String(statusRaw),
-    date:getField(r,['date','gameDate','scheduledAt','startTime','kickoff','time']),
+    date:getField(r,['date','gameDate','scheduledAt','scheduled_date_time','startTime','kickoff','time']),
     rawWeek:getField(r,['weekType','weekLabel'])
   };
 }
@@ -183,17 +183,17 @@ function mapStanding(r,i,teamIdMap){
   return {
     id:String(getField(r,['standingId','id'])??`standing-${i}`),
     team,
-    wins:num(getField(r,['wins','win','w'])),
-    losses:num(getField(r,['losses','loss','l'])),
-    ties:num(getField(r,['ties','tie','t'])),
+    wins:num(getField(r,['wins','win','w','totalWins'])),
+    losses:num(getField(r,['losses','loss','l','totalLosses'])),
+    ties:num(getField(r,['ties','tie','t','totalTies'])),
     pct:num(getField(r,['winPct','winPercentage','pct','percentage'])),
     pointsFor:num(getField(r,['pointsFor','ptsFor','pf'])),
     pointsAgainst:num(getField(r,['pointsAgainst','ptsAgainst','pa'])),
-    division:getField(r,['divisionName','division','divisionId']),
+    division:getField(r,['divisionName','divName','division','divisionId']),
     conference:getField(r,['conferenceName','conference','conferenceId']),
     seed:num(getField(r,['seed','playoffSeed','rank','standing'])),
     streak:getField(r,['streak','winLossStreak']),
-    netPoints:num(getField(r,['netPoints','pointDiff','pointDifferential']))
+    netPoints:num(getField(r,['netPoints','netPts','pointDiff','pointDifferential']))
   };
 }
 
