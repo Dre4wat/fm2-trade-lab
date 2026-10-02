@@ -1,4 +1,4 @@
-name: Sync FM2 and deploy Pages
+name: Sync FM2 and deploy Prime OS
 
 on:
   push:
@@ -31,28 +31,23 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Sync latest FM2 roster from NeonSportz
+      - name: Sync latest FM2 data from NeonSportz
         run: node scripts/sync-neon.mjs
 
-      - name: Build static site artifact
+      - name: Validate Prime OS
+        run: |
+          node --check os.js
+          test -s index.html
+          test -s os.css
+          test -s data/fm2-data.json
+
+      - name: Build Prime OS artifact
         run: |
           rm -rf dist
           mkdir -p dist/data
-          curl -fsSL https://dre4wat.github.io/fm2-trade-lab/index.html -o dist/index.html
-          curl -fsSL https://dre4wat.github.io/fm2-trade-lab/styles.css -o dist/styles.css
-          curl -fsSL https://dre4wat.github.io/fm2-trade-lab/app.js -o dist/app.js
-          cp profiles.js dist/profiles.js
-          cp profiles.css dist/profiles.css
-          python3 - <<'PY'
-          from pathlib import Path
-          p=Path('dist/index.html')
-          s=p.read_text()
-          if 'profiles.css' not in s:
-              s=s.replace('</head>','  <link rel="stylesheet" href="./profiles.css" />\n</head>')
-          if 'profiles.js' not in s:
-              s=s.replace('</body>','  <script src="./profiles.js" defer></script>\n</body>')
-          p.write_text(s)
-          PY
+          cp index.html dist/index.html
+          cp os.css dist/os.css
+          cp os.js dist/os.js
           cp data/fm2-data.json dist/data/fm2-data.json
           touch dist/.nojekyll
 
