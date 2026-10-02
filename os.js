@@ -107,7 +107,7 @@ function teamPower(ab){
   score += stars*.22; return Math.round(score*10)/10;
 }
 function posRoom(ab,pos){
-  return roster(ab).filter(p=>p.pos===pos).sort((a,b)=>(b.ovr||0)-(a.ovr||0);
+  return roster(ab).filter(p=>p.pos===pos).sort((a,b)=>(b.ovr||0)-(a.ovr||0));
 }
 function gamesFor(ab, played=null){
   let g=state.db.games.filter(x=>x.home===ab||x.away===ab);
