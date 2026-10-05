@@ -342,6 +342,15 @@ function wGameLine(db,ab,g){
   return {g,opp,us,them,margin:us-them,won:us>them,lost:us<them};
 }
 function wSeasonGames(db,ab){return db.games.filter(g=>g.played&&(g.home===ab||g.away===ab)).map(g=>wGameLine(db,ab,g));}
+function wFinish(db,ab){
+  const post=wSeasonGames(db,ab).filter(x=>(x.g.weekIndex??-1)>=18).sort((a,b)=>(b.g.weekIndex??0)-(a.g.weekIndex??0));
+  if(!post.length)return 'Regular Season';
+  const last=post[0],w=last.g.weekIndex??-1;
+  if(w>=22)return last.won?'Season 1 Champion':'Super Bowl Runner-Up';
+  if(w>=20)return 'Conference Finalist';
+  if(w>=19)return 'Divisional Round';
+  return 'Wild Card';
+}
 function wRank(db,ab,metric,low=false){
   const rows=db.teams.map(t=>({ab:t.abbr,v:metric(t.abbr)})).filter(x=>Number.isFinite(+x.v)).sort((a,b)=>low?(+a.v)-(+b.v):(+b.v)-(+a.v));
   const i=rows.findIndex(x=>x.ab===ab);return i<0?null:i+1;
@@ -373,6 +382,7 @@ function wAnalysis(db,ab){
   const defenseRank=wRank(db,ab,x=>wRecord(db,x).pa??999,true);
   const speedCore=[...ps].filter(p=>p.speed!=null).sort((a,b)=>b.speed-a.speed).slice(0,5);
   const avgTopSpeed=speedCore.length?speedCore.reduce((z,p)=>z+(+p.speed||0),0)/speedCore.length:0;
+  const post=games.filter(x=>(x.g.weekIndex??-1)>=18),postW=post.filter(x=>x.won).length,postL=post.filter(x=>x.lost).length,postT=post.length-postW-postL,finish=wFinish(db,ab);
   let identity='Built Different';
   if(avgTopSpeed>=95)identity='Track Meet';
   else if(defenseRank&&defenseRank<=5)identity='Lockdown';
@@ -385,7 +395,7 @@ function wAnalysis(db,ab){
   else if(winPct>=.55)oneLine='A winning first chapter with the ceiling still moving.';
   else if(winPct>=.4)oneLine='Close enough to matter. Hungry enough to change everything.';
   else oneLine='Season 1 wrote the origin story. Season 2 gets the response.';
-  return {t,s,r,games,biggest,heartbreak,highest,rivalry,rw,rl,rt,fastest,top,young,avgAge,xf,ss,star,pf,pa,diff,winPct,leagueRank,offenseRank,defenseRank,identity,oneLine,ps};
+  return {t,s,r,games,biggest,heartbreak,highest,rivalry,rw,rl,rt,fastest,top,young,avgAge,xf,ss,star,pf,pa,diff,winPct,leagueRank,offenseRank,defenseRank,identity,oneLine,ps,postW,postL,postT,finish};
 }
 function wLogo(db,ab,cls='wrapped-logo'){
   const t=wTeam(db,ab);return t.logo?'<img class="'+cls+'" src="'+esc(t.logo)+'" alt="'+esc(ab)+'">':'<div class="'+cls+'">'+esc(ab)+'</div>';
@@ -403,18 +413,19 @@ function renderWrapped(){
   if(!state.wrappedTeam){
     setAccent(null);
     const teams=[...db.teams].map(t=>({t,a:wAnalysis(db,t.abbr)})).sort((a,b)=>b.a.winPct-a.a.winPct||b.a.diff-a.a.diff);
+    const champion=teams.find(x=>x.a.finish==='Season 1 Champion');
     const cards=teams.map(({t,a},i)=>'<article class="wrapped-owner-card" style="--wc1:'+esc(t.c1||'#7c3cff')+';--wc2:'+esc(t.c2||'#ff3d86')+'" data-wrap-team="'+esc(t.abbr)+'"><div class="wrapped-owner-glow"></div><div class="wrapped-rank">#'+(i+1)+'</div>'+wLogo(db,t.abbr)+'<span class="wrapped-season">FM2 // SEASON 1</span><h3>'+esc(wOwner(db,t.abbr))+'</h3><p>'+esc(t.city+' '+t.name)+'</p><div class="wrapped-record">'+a.r.w+'–'+a.r.l+(a.r.t?'–'+a.r.t:'')+'</div><div class="wrapped-identity">'+esc(a.identity)+'</div><button class="wrapped-open">OPEN WRAPPED →</button></article>').join('');
-    $('#desktop').innerHTML='<section class="wrapped-index-hero"><span class="eyebrow">FM2 PRESENTS</span><h2>SEASON 1<br><em>WRAPPED</em></h2><p>32 owners. One first chapter. Records, signature moments, roster identities, rivals, stars and the numbers that defined FM2’s opening season.</p><div class="wrapped-index-stats"><span><b>'+db.teams.length+'</b>FRANCHISES</span><span><b>'+db.games.filter(g=>g.played).length+'</b>GAMES</span><span><b>'+db.players.length+'</b>PLAYERS</span><span><b>1</b>SEASON</span></div></section><div class="wrapped-owner-grid">'+cards+'</div>';
+    $('#desktop').innerHTML='<section class="wrapped-index-hero"><span class="eyebrow">FM2 PRESENTS</span><h2>SEASON 1<br><em>WRAPPED</em></h2><p>32 owners. One first chapter. Records, signature moments, roster identities, rivals, stars and the numbers that defined FM2’s opening season.</p>'+(champion?'<div class="wrapped-champion-chip">🏆 SEASON 1 CHAMPION · '+esc(wOwner(db,champion.t.abbr))+' · '+esc(champion.t.city+' '+champion.t.name)+'</div>':'')+'<div class="wrapped-index-stats"><span><b>'+db.teams.length+'</b>FRANCHISES</span><span><b>'+db.games.filter(g=>g.played).length+'</b>GAMES</span><span><b>'+db.players.length+'</b>PLAYERS</span><span><b>1</b>SEASON</span></div></section><div class="wrapped-owner-grid">'+cards+'</div>';
     return;
   }
   const ab=state.wrappedTeam,a=wAnalysis(db,ab),t=a.t,owner=wOwner(db,ab);setAccent(ab);
   const rival=t&&a.rivalry?wTeam(db,a.rivalry):null;
   const big=a.biggest,loss=a.heartbreak;
-  const finish=a.s?.playoffStatus||('League rank '+ordinal(a.leagueRank));
+  const finish=a.finish||('League rank '+ordinal(a.leagueRank));
   const pointClass=a.diff>=0?'positive':'negative';
   const cap=t.capAvailable!=null?fmtM(t.capAvailable):'—';
-  const hero='<section class="wrapped-cover" style="--wc1:'+esc(t.c1||'#7c3cff')+';--wc2:'+esc(t.c2||'#ff3d86')+'"><div class="wrapped-cover-art"><div class="wrapped-ring r1"></div><div class="wrapped-ring r2"></div>'+wLogo(db,ab,'wrapped-cover-logo')+'</div><button class="wrapped-back" data-wrap-back="1">← ALL OWNERS</button><div class="wrapped-cover-copy"><span>FM2 // SEASON 1 WRAPPED</span><h2>'+esc(owner)+'</h2><h3>'+esc(t.city+' '+t.name)+'</h3><div class="wrapped-huge-record">'+a.r.w+'–'+a.r.l+(a.r.t?'–'+a.r.t:'')+'</div><p>'+esc(a.oneLine)+'</p></div><div class="wrapped-sticker">'+esc(a.identity)+'</div></section>';
-  const receipt='<article class="wrapped-story lime"><span class="story-no">01</span><span class="eyebrow">THE RECEIPT</span><h3>Your season<br>by the numbers.</h3><div class="story-big">'+(a.diff>=0?'+':'')+a.diff+'</div><p>POINT DIFFERENTIAL</p><div class="story-kpis"><span><b>'+a.pf+'</b>POINTS FOR</span><span><b>'+a.pa+'</b>POINTS AGAINST</span><span><b>'+ordinal(a.leagueRank)+'</b>LEAGUE RECORD RANK</span><span><b>'+esc(finish)+'</b>FINISH</span></div></article>';
+  const hero='<section class="wrapped-cover" style="--wc1:'+esc(t.c1||'#7c3cff')+';--wc2:'+esc(t.c2||'#ff3d86')+'"><div class="wrapped-cover-art"><div class="wrapped-ring r1"></div><div class="wrapped-ring r2"></div>'+wLogo(db,ab,'wrapped-cover-logo')+'</div><button class="wrapped-back" data-wrap-back="1">← ALL OWNERS</button><div class="wrapped-cover-copy"><span>FM2 // SEASON 1 WRAPPED</span><h2>'+esc(owner)+'</h2><h3>'+esc(t.city+' '+t.name)+'</h3><div class="wrapped-huge-record">'+a.r.w+'–'+a.r.l+(a.r.t?'–'+a.r.t:'')+'</div><p>'+esc(a.oneLine)+'</p></div><div class="wrapped-sticker">'+esc(a.finish==='Season 1 Champion'?'CHAMPION':a.identity)+'</div></section>';
+  const receipt='<article class="wrapped-story lime"><span class="story-no">01</span><span class="eyebrow">THE RECEIPT</span><h3>Your season<br>by the numbers.</h3><div class="story-big">'+(a.diff>=0?'+':'')+a.diff+'</div><p>POINT DIFFERENTIAL</p><div class="story-kpis"><span><b>'+a.pf+'</b>POINTS FOR</span><span><b>'+a.pa+'</b>POINTS AGAINST</span><span><b>'+ordinal(a.leagueRank)+'</b>LEAGUE RECORD RANK</span><span><b>'+esc(finish)+'</b>FINISH</span><span><b>'+a.postW+'–'+a.postL+(a.postT?'–'+a.postT:'')+'</b>POSTSEASON</span></div></article>';
   const statement='<article class="wrapped-story orange"><span class="story-no">02</span><span class="eyebrow">STATEMENT NIGHT</span><h3>'+(big?'Your loudest win.':'The big one is still coming.')+'</h3>'+(big?'<div class="matchup-poster">'+wLogo(db,ab,'story-logo')+'<div><b>'+ab+' '+big.us+'</b><span>FINAL</span><b>'+big.opp+' '+big.them+'</b></div>'+wLogo(db,big.opp,'story-logo')+'</div><p class="story-caption">+'+big.margin+' against '+esc(wTeam(db,big.opp).name)+' · '+esc(big.g.stage||'Season')+' '+(big.g.week?'Week '+big.g.week:'')+'</p>':'<div class="story-big">NEXT</div>')+'</article>';
   const star='<article class="wrapped-story purple"><span class="story-no">03</span><span class="eyebrow">FACE OF THE SEASON</span><h3>The roster<br>ran through him.</h3>'+wMiniPlayer(a.top,'TOP OVR')+(a.top?'<div class="story-big">'+(a.top.ovr??'—')+'</div><p>OVERALL · '+esc(a.top.dev||'NORMAL')+'</p>':'')+'</article>';
   const speed='<article class="wrapped-story cyan"><span class="story-no">04</span><span class="eyebrow">PURE SPEED</span><h3>Your fastest<br>human.</h3>'+wMiniPlayer(a.fastest,'SPEED KING')+(a.fastest?'<div class="story-big">'+(a.fastest.speed??'—')+'</div><p>SPEED RATING</p>':'')+'</article>';
