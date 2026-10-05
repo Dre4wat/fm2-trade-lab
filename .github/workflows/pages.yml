@@ -54,6 +54,7 @@ jobs:
           node --check os.js
           test -s index.html
           test -s os.css
+          test -s wrapped.css
           test -s data/fm2-data.json
           test -s data/season1.json
 
@@ -63,6 +64,7 @@ jobs:
           mkdir -p dist/data
           cp index.html dist/index.html
           cp os.css dist/os.css
+          cp wrapped.css dist/wrapped.css
           cp os.js dist/os.js
           cp data/fm2-data.json dist/data/fm2-data.json
           cp data/season1.json dist/data/season1.json
