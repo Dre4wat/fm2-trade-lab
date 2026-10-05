@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -34,12 +34,28 @@ jobs:
       - name: Sync latest FM2 data from NeonSportz
         run: node scripts/sync-neon.mjs
 
+      - name: Freeze Season 1 snapshot
+        run: node scripts/freeze-season1.mjs
+
+      - name: Commit Season 1 snapshot if newly frozen
+        run: |
+          if git status --porcelain data/season1.json | grep -q .; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add data/season1.json
+            git commit -m "Freeze FM2 Season 1 snapshot"
+            git push
+          else
+            echo "Season 1 snapshot already frozen."
+          fi
+
       - name: Validate Prime OS
         run: |
           node --check os.js
           test -s index.html
           test -s os.css
           test -s data/fm2-data.json
+          test -s data/season1.json
 
       - name: Build Prime OS artifact
         run: |
@@ -49,6 +65,7 @@ jobs:
           cp os.css dist/os.css
           cp os.js dist/os.js
           cp data/fm2-data.json dist/data/fm2-data.json
+          cp data/season1.json dist/data/season1.json
           touch dist/.nojekyll
 
       - name: Configure GitHub Pages
