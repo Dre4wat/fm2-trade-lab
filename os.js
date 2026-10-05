@@ -18,7 +18,7 @@ const APP_META = {
   standings:['≋','Standings','Conference and divisional race'],
   schedule:['▦','Schedule','Results, upcoming games and weekly flow'],
   wrapped:['✺','Season 1 Wrapped','Every owner’s first-season story, remixed'],
-  contracts:['
+  contracts:['$','Cap Matrix','Contracts, cap pressure and value'],
   compare:['⇄','Compare','Side-by-side player analysis'],
   trade:['⇌','Trade Lab','Build and evaluate FM2 deals'],
   lab:['✦','FM2 Lab','Command-line exploration of the league']
